@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>📱 Mobile Price Predictor</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    padding: 24px 32px;
+    border-bottom: 1px solid #334155;
+    display: flex; align-items: center; gap: 16px;
+  }
+  header h1 { font-size: 1.6rem; font-weight: 700; }
+  header p  { color: #94a3b8; font-size: 0.9rem; margin-top: 4px; }
+  .badge {
+    background: #3b82f6; color: white;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 600;
+  }
+
+  .container {
+    max-width: 1200px; margin: 32px auto; padding: 0 24px;
+    display: grid; grid-template-columns: 1fr 380px; gap: 24px;
+  }
+  @media(max-width:900px){ .container{ grid-template-columns:1fr; } }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .card h2 { font-size: 1.05rem; font-weight: 600; margin-bottom: 20px; color: #f1f5f9; }
+
+  .section-title {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: #64748b;
+    margin: 20px 0 12px; padding-bottom: 6px;
+    border-bottom: 1px solid #334155;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label {
+    font-size: 0.78rem; color: #94a3b8; font-weight: 500;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .form-group label span.val {
+    color: #3b82f6; font-weight: 700; font-size: 0.85rem;
+  }
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 5px;
+    background: #334155; border-radius: 4px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    background: #3b82f6; border-radius: 50%; cursor: pointer;
+    transition: background 0.2s;
+  }
+  input[type=range]:hover::-webkit-slider-thumb { background: #60a5fa; }
+
+  .toggle-group {
+    display: flex; gap: 8px;
+  }
+  .toggle-btn {
+    flex: 1; padding: 8px; border: 1px solid #334155; border-radius: 8px;
+    background: #0f172a; color: #94a3b8; cursor: pointer;
+    font-size: 0.8rem; font-weight: 600; transition: all 0.15s;
+  }
+  .toggle-btn.active {
+    background: #1d4ed8; border-color: #3b82f6; color: white;
+  }
+
+  .predict-btn {
+    width: 100%; margin-top: 24px; padding: 14px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white; border: none; border-radius: 12px;
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.5px;
+  }
+  .predict-btn:hover  { opacity: 0.9; }
+  .predict-btn:active { transform: scale(0.98); }
+
+  /* Result card */
+  .result-card {
+    background: #1e293b; border: 1px solid #334155;
+    border-radius: 16px; padding: 24px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .result-placeholder {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 220px; color: #475569;
+    text-align: center; gap: 12px;
+  }
+  .result-placeholder .icon { font-size: 3rem; }
+
+  .result-box {
+    border-radius: 12px; padding: 20px; text-align: center;
+    border: 2px solid transparent; transition: all 0.4s;
+  }
+  .result-box .result-icon  { font-size: 2.5rem; margin-bottom: 6px; }
+  .result-box .result-label { font-size: 1.4rem; font-weight: 800; }
+  .result-box .result-range {
+    font-size: 0.9rem; color: #cbd5e1; margin-top: 4px;
+  }
+
+  .prob-bar-wrapper { display: flex; flex-direction: column; gap: 10px; }
+  .prob-row { display: flex; flex-direction: column; gap: 4px; }
+  .prob-label-row {
+    display: flex; justify-content: space-between;
+    font-size: 0.78rem; color: #94a3b8;
+  }
+  .prob-track {
+    background: #334155; border-radius: 4px; height: 8px; overflow: hidden;
+  }
+  .prob-fill {
+    height: 100%; border-radius: 4px; transition: width 0.6s ease;
+  }
+
+  .chart-container { position: relative; height: 220px; }
+
+  .hidden { display: none !important; }
+
+  footer {
+    text-align: center; padding: 24px;
+    color: #475569; font-size: 0.8rem;
+    border-top: 1px solid #1e293b; margin-top: 16px;
+  }
+  footer a { color: #3b82f6; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📱 Mobile Price Predictor</h1>
+    <p>Enter phone specs below to predict its price range using Machine Learning</p>
+  </div>
+  <span class="badge">Random Forest · 73% Accuracy</span>
+</header>
+
+<div class="container">
+
+  <!-- ── LEFT: INPUT FORM ───────────────────────────────── -->
+  <div class="card">
+    <h2>🔧 Phone Specifications</h2>
+
+    <div class="section-title">Performance</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>RAM (MB) <span class="val" id="ram_val">2000</span></label>
+        <input type="range" id="ram" min="256" max="4000" value="2000" step="64" oninput="updateVal('ram','ram_val')">
+      </div>
+      <div class="form-group">
+        <label>Processor Cores <span class="val" id="n_cores_val">4</span></label>
+        <input type="range" id="n_cores" min="1" max="8" value="4" step="1" oninput="updateVal('n_cores','n_cores_val')">
+      </div>
+      <div class="form-group">
+        <label>Clock Speed (GHz) <span class="val" id="clock_speed_val">1.5</span></label>
+        <input type="range" id="clock_speed" min="0.5" max="3.0" value="1.5" step="0.1" oninput="updateVal('clock_speed','clock_speed_val')">
+      </div>
+      <div class="form-group">
+        <label>Internal Memory (GB) <span class="val" id="int_memory_val">32</span></label>
+        <input type="range" id="int_memory" min="2" max="64" value="32" step="2" oninput="updateVal('int_memory','int_memory_val')">
+      </div>
+    </div>
+
+    <div class="section-title">Battery & Build</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Battery Power (mAh) <span class="val" id="battery_power_val">1500</span></label>
+        <input type="range" id="battery_power" min="500" max="2000" value="1500" step="50" oninput="updateVal('battery_power','battery_power_val')">
+      </div>
+      <div class="form-group">
+        <label>Talk Time (hours) <span class="val" id="talk_time_val">10</span></label>
+        <input type="range" id="talk_time" min="2" max="20" value="10" step="1" oninput="updateVal('talk_time','talk_time_val')">
+      </div>
+      <div class="form-group">
+        <label>Mobile Weight (g) <span class="val" id="mobile_wt_val">140</span></label>
+        <input type="range" id="mobile_wt" min="80" max="200" value="140" step="5" oninput="updateVal('mobile_wt','mobile_wt_val')">
+      </div>
+      <div class="form-group">
+        <label>Depth (cm) <span class="val" id="m_dep_val">0.5</span></label>
+        <input type="range" id="m_dep" min="0.1" max="1.0" value="0.5" step="0.1" oninput="updateVal('m_dep','m_dep_val')">
+      </div>
+    </div>
+
+    <div class="section-title">Display</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Pixel Height <span class="val" id="px_height_val">1000</span></label>
+        <input type="range" id="px_height" min="0" max="1960" value="1000" step="40" oninput="updateVal('px_height','px_height_val')">
+      </div>
+      <div class="form-group">
+        <label>Pixel Width <span class="val" id="px_width_val">1200</span></label>
+        <input type="range" id="px_width" min="500" max="1998" value="1200" step="50" oninput="updateVal('px_width','px_width_val')">
+      </div>
+      <div class="form-group">
+        <label>Screen Height (cm) <span class="val" id="sc_h_val">12</span></label>
+        <input type="range" id="sc_h" min="5" max="19" value="12" step="1" oninput="updateVal('sc_h','sc_h_val')">
+      </div>
+      <div class="form-group">
+        <label>Screen Width (cm) <span class="val" id="sc_w_val">6</span></label>
+        <input type="range" id="sc_w" min="0" max="18" value="6" step="1" oninput="updateVal('sc_w','sc_w_val')">
+      </div>
+    </div>
+
+    <div class="section-title">Camera</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Primary Camera (MP) <span class="val" id="pc_val">10</span></label>
+        <input type="range" id="pc" min="0" max="20" value="10" step="1" oninput="updateVal('pc','pc_val')">
+      </div>
+      <div class="form-group">
+        <label>Front Camera (MP) <span class="val" id="fc_val">5</span></label>
+        <input type="range" id="fc" min="0" max="20" value="5" step="1" oninput="updateVal('fc','fc_val')">
+      </div>
+    </div>
+
+    <div class="section-title">Connectivity</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Bluetooth</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="blue_0" onclick="setToggle('blue',0)">No</button>
+          <button class="toggle-btn active" id="blue_1" onclick="setToggle('blue',1)">Yes</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Dual SIM</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="dual_sim_0" onclick="setToggle('dual_sim',0)">No</button>
+          <button class="toggle-btn active" id="dual_sim_1" onclick="setToggle('dual_sim',1)">Yes</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>4G</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="four_g_0" onclick="setToggle('four_g',0)">No</button>
+          <button class="toggle-btn active" id="four_g_1" onclick="setToggle('four_g',1)">Yes</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>3G</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="three_g_0" onclick="setToggle('three_g',0)">No</button>
+          <button class="toggle-btn active" id="three_g_1" onclick="setToggle('three_g',1)">Yes</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Touch Screen</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="touch_screen_0" onclick="setToggle('touch_screen',0)">No</button>
+          <button class="toggle-btn active" id="touch_screen_1" onclick="setToggle('touch_screen',1)">Yes</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>WiFi</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="wifi_0" onclick="setToggle('wifi',0)">No</button>
+          <button class="toggle-btn active" id="wifi_1" onclick="setToggle('wifi',1)">Yes</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="predict-btn" onclick="predict()">🔮 Predict Price Range</button>
+  </div>
+
+  <!-- ── RIGHT: RESULTS ─────────────────────────────────── -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    <div class="result-card">
+      <h2>📊 Prediction Result</h2>
+
+      <div id="placeholder" class="result-placeholder">
+        <div class="icon">🤖</div>
+        <div>Fill in the specs and hit <strong>Predict</strong></div>
+      </div>
+
+      <div id="result_box" class="result-box hidden"></div>
+
+      <div id="prob_section" class="hidden">
+        <div class="section-title" style="margin-top:0">Confidence per Class</div>
+        <div class="prob-bar-wrapper" id="prob_bars"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📈 Feature Importance</h2>
+      <div class="chart-container">
+        <canvas id="featChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Built with <strong>Flask + scikit-learn (Random Forest)</strong> ·
+  Dataset: <a href="https://www.kaggle.com/datasets/iabhishekofficial/mobile-price-classification" target="_blank">Kaggle Mobile Price Classification</a>
+</footer>
+
+<script>
+const toggleVals = { blue:1, dual_sim:1, four_g:1, three_g:1, touch_screen:1, wifi:1 };
+const probColors = ['#22c55e','#3b82f6','#f59e0b','#ef4444'];
+
+function updateVal(id, valId) {
+  document.getElementById(valId).textContent = document.getElementById(id).value;
+}
+function setToggle(field, val) {
+  toggleVals[field] = val;
+  document.getElementById(field+'_0').classList.toggle('active', val===0);
+  document.getElementById(field+'_1').classList.toggle('active', val===1);
+}
+
+async function predict() {
+  const btn = document.querySelector('.predict-btn');
+  btn.textContent = '⏳ Predicting…'; btn.disabled = true;
+
+  const payload = {
+    battery_power: document.getElementById('battery_power').value,
+    blue:          toggleVals.blue,
+    clock_speed:   document.getElementById('clock_speed').value,
+    dual_sim:      toggleVals.dual_sim,
+    fc:            document.getElementById('fc').value,
+    four_g:        toggleVals.four_g,
+    int_memory:    document.getElementById('int_memory').value,
+    m_dep:         document.getElementById('m_dep').value,
+    mobile_wt:     document.getElementById('mobile_wt').value,
+    n_cores:       document.getElementById('n_cores').value,
+    pc:            document.getElementById('pc').value,
+    px_height:     document.getElementById('px_height').value,
+    px_width:      document.getElementById('px_width').value,
+    ram:           document.getElementById('ram').value,
+    sc_h:          document.getElementById('sc_h').value,
+    sc_w:          document.getElementById('sc_w').value,
+    talk_time:     document.getElementById('talk_time').value,
+    three_g:       toggleVals.three_g,
+    touch_screen:  toggleVals.touch_screen,
+    wifi:          toggleVals.wifi,
+  };
+
+  try {
+    const res  = await fetch('/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    // Result box
+    const box = document.getElementById('result_box');
+    box.classList.remove('hidden');
+    document.getElementById('placeholder').classList.add('hidden');
+    box.style.background = data.color + '18';
+    box.style.borderColor = data.color;
+    box.innerHTML = `
+      <div class="result-icon">${data.icon}</div>
+      <div class="result-label" style="color:${data.color}">${data.label}</div>
+      <div class="result-range">${data.range}</div>`;
+
+    // Probability bars
+    document.getElementById('prob_section').classList.remove('hidden');
+    const barsEl = document.getElementById('prob_bars');
+    barsEl.innerHTML = data.prob_labels.map((lbl,i) => `
+      <div class="prob-row">
+        <div class="prob-label-row"><span>${lbl}</span><span>${data.probabilities[i]}%</span></div>
+        <div class="prob-track"><div class="prob-fill" style="width:${data.probabilities[i]}%;background:${probColors[i]}"></div></div>
+      </div>`).join('');
+
+  } catch(e) { alert('Error: ' + e.message); }
+  finally {
+    btn.textContent = '🔮 Predict Price Range'; btn.disabled = false;
+  }
+}
+
+// Feature importance chart
+async function loadFeatChart() {
+  const res  = await fetch('/feature_importance');
+  const data = await res.json();
+  const top10 = data.slice(0,10).reverse();
+  new Chart(document.getElementById('featChart'), {
+    type: 'bar',
+    data: {
+      labels: top10.map(d=>d.feature),
+      datasets:[{ data: top10.map(d=>d.importance),
+        backgroundColor: top10.map((_,i)=> i>=8 ? '#ef4444' : i>=6 ? '#f59e0b' : '#3b82f6'),
+        borderRadius:4 }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ grid:{color:'#334155'}, ticks:{color:'#94a3b8'} },
+        y:{ grid:{display:false}, ticks:{color:'#94a3b8', font:{size:11}} }
+      }
+    }
+  });
+}
+loadFeatChart();
+</script>
+</body>
+</html>
