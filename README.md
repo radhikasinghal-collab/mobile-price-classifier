@@ -1,74 +1,40 @@
-# 📱 Mobile Price Predictor
+# 📱 Mobile Price Classifier
 
-A machine learning web app that predicts the **price range** of a mobile phone based on its hardware specifications.
+A machine learning web app that predicts the price range of a mobile phone based on its specifications.
 
-## 🚀 How to Run
-
-### 1. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Start the app
-```bash
-python app.py
-```
-
-### 3. Open in browser
-```
-http://localhost:5000
-```
-
----
-
-## 🗂️ Project Structure
-
-```
-mobile-price-app/
-│
-├── app.py                        ← Flask backend + ML model
-├── model.joblib                  ← Trained Random Forest model
-├── requirements.txt              ← Python dependencies
-│
-├── templates/
-│   └── index.html                ← Frontend UI
-│
-└── static/
-    └── feature_importance.json   ← Feature importance data
-```
-
----
-
-## 🤖 ML Details
-
-| Item | Value |
-|------|-------|
-| Algorithm | Random Forest Classifier |
-| Dataset | [Kaggle – Mobile Price Classification](https://www.kaggle.com/datasets/iabhishekofficial/mobile-price-classification) |
-| Features | 20 hardware specs (RAM, battery, pixels, etc.) |
-| Target | Price Range: 0 (Low) → 3 (Very High) |
-| Test Accuracy | ~73% |
-
-### Top Features
-1. **RAM** — strongest predictor by far
-2. Battery Power
-3. Pixel Height / Width
-4. Internal Memory
-
----
+## 🔍 About the Project
+This project uses a classification model trained on mobile phone features like RAM, battery, camera, etc. to predict whether a phone falls in a low, medium, high, or very high price range.
 
 ## 🛠️ Tech Stack
+- Python
+- Scikit-learn
+- Flask
+- HTML/CSS
 
-- **Backend:** Python, Flask, scikit-learn, joblib
-- **Frontend:** HTML, CSS, JavaScript, Chart.js
-- **Model:** Random Forest (trained on 2000 samples, 200 estimators)
+## 🚀 How to Run Locally
+1. Clone the repo
+```bash
+   git clone https://github.com/radhikasinghal-collab/mobile-price-classifier.git
+```
+2. Install dependencies
+```bash
+   pip install -r requirements.txt
+```
+3. Run the app
+```bash
+   python app.py
+```
+4. Open `http://localhost:5000` in your browser
 
----
+## 📊 Model Accuracy
+Mention your model accuracy here (e.g. 95%)
 
-## 📸 Features of the App
-
-- 🎚️ Interactive sliders for all 20 phone specs
-- 🔘 Toggle buttons for Yes/No features (4G, Bluetooth, WiFi etc.)
-- 🔮 Real-time price range prediction
-- 📊 Confidence bars showing probability for each class
-- 📈 Feature importance chart (top 10 features)
+## 📁 Project Structure
+```
+├── app.py
+├── model.pkl
+├── templates/
+│   └── index.html
+├── requirements.txt
+└── README.md
+```
